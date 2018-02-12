@@ -6,7 +6,6 @@
 #define SENSOR_LOW 400 //If watering and sensor goes below this, watering is done.
 #define SENSOR_HIGH 600 //If sensor goes up this, watering is need
 #define NO_SENSOR 899 //If sensors goes up this, sensor is off the soil. Prevent infinite watering.
-#define NO_WATER_NEED -1
 #define LOGGING
 //#undef LOGGING
 
@@ -18,7 +17,8 @@ struct Pot {
   int PowerRelay;
   int Value; } pots[NUM];
 
-int i, n;
+int i;
+long n;
 
 void UpdateValues(){
   for(i = 0; i < NUM; i++){
@@ -38,15 +38,14 @@ void UpdateValues(){
 void NeedWater(){
   for(i = 0; i < NUM; i++){
     if(pots[i].Watering){
-      if(pots[i].WaterMute == 0){
+      pots[i].WaterMute--;
+      if(pots[i].WaterMute <= 0){
         pots[i].Watering = pots[i].Value > SENSOR_LOW; //if Watering and WaterMute == 0, pot is watered
         if(pots[i].Watering == false){
           Serial.print(i);
           Serial.print(",DONEWATER,");
           Serial.println(pots[i].Value);
         }
-      }else{
-        pots[i].WaterMute--;
       }
     }else{
       if(NO_SENSOR < pots[i].Value){
@@ -90,8 +89,10 @@ void WaterPots(){
 
 void DelayRead(){
   n *= WATER_DELAY;
+  n += NUM * READ_DELAY;
   n *= -1;
   n += READ_INTERVAL;
+  if(n < 0) n = 0;
   delay(n);
 }
 
